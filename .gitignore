@@ -1,0 +1,19 @@
+# Generated iCUE installation packages belong in GitHub Releases.
+*.icuewidget
+/*.zip
+
+# Local build history and broken/backup packages.
+archive/
+
+# Local testing files
+tests/
+
+# Change log for the project.
+CHANGELOG.md
+
+# Local tooling and operating-system files.
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+

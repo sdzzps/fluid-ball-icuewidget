@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480">
+  <defs>
+    <radialGradient id="screen" cx="50%" cy="42%" r="64%">
+      <stop offset="0" stop-color="#0a2638"/>
+      <stop offset=".56" stop-color="#020810"/>
+      <stop offset="1" stop-color="#000207"/>
+    </radialGradient>
+    <radialGradient id="orb" cx="34%" cy="24%" r="78%">
+      <stop offset="0" stop-color="#ff7a86" stop-opacity=".45"/>
+      <stop offset=".2" stop-color="#7c1522"/>
+      <stop offset="1" stop-color="#010812"/>
+    </radialGradient>
+    <linearGradient id="fluid1" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ff5968" stop-opacity=".58"/>
+      <stop offset="1" stop-color="#a20d20" stop-opacity=".88"/>
+    </linearGradient>
+    <linearGradient id="fluid2" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ff8791" stop-opacity=".52"/>
+      <stop offset="1" stop-color="#7d0818" stop-opacity=".84"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="hotIcon" color-interpolation-filters="sRGB">
+      <feFlood flood-color="#ff3d4d" result="color"/>
+      <feComposite in="color" in2="SourceAlpha" operator="in"/>
+    </filter>
+    <filter id="lowPumpIcon" color-interpolation-filters="sRGB">
+      <feFlood flood-color="#37d9ff" result="color"/>
+      <feComposite in="color" in2="SourceAlpha" operator="in"/>
+    </filter>
+    <clipPath id="clip"><circle cx="240" cy="250" r="148"/></clipPath>
+  </defs>
+  <rect width="480" height="480" fill="#000"/>
+  <circle cx="240" cy="240" r="240" fill="url(#screen)"/>
+  <g fill="#39eba9">
+    <rect x="26" y="236" width="28" height="8" rx="4" opacity=".96" transform="rotate(-42 240 240)"/>
+    <rect x="26" y="236" width="28" height="8" rx="4" opacity=".96" transform="rotate(-34.36 240 240)"/>
+    <rect x="26" y="236" width="28" height="8" rx="4" opacity=".96" transform="rotate(-26.73 240 240)"/>
+    <rect x="26" y="236" width="28" height="8" rx="4" opacity=".96" transform="rotate(-19.09 240 240)"/>
+    <rect x="26" y="236" width="28" height="8" rx="4" opacity=".96" transform="rotate(-11.45 240 240)"/>
+    <rect x="26" y="236" width="28" height="8" rx="4" opacity=".96" transform="rotate(-3.82 240 240)"/>
+    <rect x="26" y="236" width="28" height="8" rx="4" opacity=".14" transform="rotate(3.82 240 240)"/>
+    <rect x="26" y="236" width="28" height="8" rx="4" opacity=".14" transform="rotate(11.45 240 240)"/>
+    <rect x="26" y="236" width="28" height="8" rx="4" opacity=".14" transform="rotate(19.09 240 240)"/>
+    <rect x="26" y="236" width="28" height="8" rx="4" opacity=".14" transform="rotate(26.73 240 240)"/>
+    <rect x="26" y="236" width="28" height="8" rx="4" opacity=".14" transform="rotate(34.36 240 240)"/>
+    <rect x="26" y="236" width="28" height="8" rx="4" opacity=".14" transform="rotate(42 240 240)"/>
+  </g>
+  <g opacity=".94">
+    <rect x="426" y="236" width="23" height="8" rx="4" fill="#ffad3d" transform="rotate(-42 240 240)"/>
+    <rect x="426" y="236" width="32" height="8" rx="4" fill="#ff3d4d" transform="rotate(-34.36 240 240)"/>
+    <rect x="426" y="236" width="23" height="8" rx="4" fill="#ffad3d" transform="rotate(-26.73 240 240)"/>
+    <rect x="426" y="236" width="14" height="8" rx="4" fill="#37d9ff" transform="rotate(-19.09 240 240)"/>
+    <rect x="426" y="236" width="14" height="8" rx="4" fill="#37d9ff" transform="rotate(-11.45 240 240)"/>
+    <rect x="426" y="236" width="23" height="8" rx="4" fill="#ffad3d" transform="rotate(-3.82 240 240)"/>
+    <rect x="426" y="236" width="32" height="8" rx="4" fill="#ff3d4d" transform="rotate(3.82 240 240)"/>
+    <rect x="426" y="236" width="23" height="8" rx="4" fill="#ffad3d" transform="rotate(11.45 240 240)"/>
+    <rect x="426" y="236" width="14" height="8" rx="4" fill="#37d9ff" transform="rotate(19.09 240 240)"/>
+    <rect x="426" y="236" width="14" height="8" rx="4" fill="#37d9ff" transform="rotate(26.73 240 240)"/>
+  </g>
+  <svg x="151" y="32" width="42" height="42" viewBox="0 -960 960 960" fill="#37d9ff">
+    <path d="M360-360v-240h240v240H360Zm80-80h80v-80h-80v80Zm-80 320v-80h-80q-33 0-56.5-23.5T200-280v-80h-80v-80h80v-80h-80v-80h80v-80q0-33 23.5-56.5T280-760h80v-80h80v80h80v-80h80v80h80q33 0 56.5 23.5T760-680v80h80v80h-80v80h80v80h-80v80q0 33-23.5 56.5T680-200h-80v80h-80v-80h-80v80h-80Zm320-160v-400H280v400h400ZM480-480Z"/>
+  </svg>
+  <text x="205" y="68" fill="#e9fbff" font-family="Consolas,monospace" font-size="35" font-weight="700">51.6<tspan font-size="20">°C</tspan></text>
+  <circle cx="240" cy="250" r="154" fill="#ff3d4d" opacity=".1" filter="url(#glow)"/>
+  <circle cx="240" cy="250" r="148" fill="url(#orb)" stroke="#ff5968" stroke-opacity=".72" stroke-width="2"/>
+  <g clip-path="url(#clip)">
+    <path d="M86 262 C126 241 164 280 204 259 C247 236 282 281 324 253 C350 236 375 244 394 250 L394 400 L86 400 Z" fill="url(#fluid1)"/>
+    <path d="M86 289 C128 268 168 297 208 281 C250 266 289 304 331 276 C357 261 378 270 394 278 L394 400 L86 400 Z" fill="url(#fluid2)"/>
+  </g>
+  <ellipse cx="188" cy="147" rx="52" ry="17" fill="#fff" opacity=".2" transform="rotate(-24 188 147)"/>
+  <text x="240" y="211" fill="#d7f2f7" fill-opacity=".7" font-family="Arial,sans-serif" font-size="17" font-weight="700" letter-spacing="6" text-anchor="middle">LIQUID</text>
+  <text x="213" y="286" fill="#f0fcff" font-family="Consolas,monospace" font-size="70" font-weight="700" text-anchor="middle">43.5</text>
+  <text x="300" y="258" fill="#f0fcff" font-family="Consolas,monospace" font-size="28" font-weight="700">°C</text>
+  <text x="240" y="340" fill="#ffd0d4" fill-opacity=".82" font-family="Consolas,monospace" font-size="23" font-weight="700" text-anchor="middle">Δ 8.1°C</text>
+  <svg x="137" y="396" width="49" height="49" viewBox="0 -960 960 960" fill="#37d9ff">
+    <path d="M120-280h164q-17-17-31.5-37T227-360H120v80Zm501.5-58.5Q680-397 680-480t-58.5-141.5Q563-680 480-680t-141.5 58.5Q280-563 280-480t58.5 141.5Q397-280 480-280t141.5-58.5ZM733-600h107v-80H676q17 17 31.5 37t25.5 43ZM40-160v-320h80v40h83q-2-10-2.5-19.5T200-480q0-117 81.5-198.5T480-760h360v-40h80v320h-80v-40h-83q2 10 2.5 19.5t.5 20.5q0 117-81.5 198.5T480-200H120v40H40Zm80-120v-80 80Zm720-320v-80 80ZM480-480Zm-56.5 96.5Q400-407 400-440q0-23 9.5-45.5T446-550l34-50 34 50q27 42 36.5 64.5T560-440q0 33-23.5 56.5T480-360q-33 0-56.5-23.5Z"/>
+  </svg>
+  <text x="198" y="433" fill="#e9fbff" font-family="Consolas,monospace" font-size="35" font-weight="700">2460</text>
+  <text x="292" y="431" fill="#b9dce5" fill-opacity=".7" font-family="Arial,sans-serif" font-size="15" font-weight="700">RPM</text>
+</svg>

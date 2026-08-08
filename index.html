@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tr('Fluid Ball')</title>
+  <link rel="icon" type="image/svg+xml" href="resources/icon.svg" />
+  <meta name="x-icue-widget-preview" content="preview.png" />
+
+  <meta name="x-icue-property" content="cpuSensorId" data-label="tr('CPU Temperature')" data-type="sensors-combobox" data-default="plugins.Sensorsdataprovider.getDefaultSensorIdBlock('temperature', 'package')" />
+  <meta name="x-icue-property" content="liquidSensorId" data-label="tr('Liquid Temperature')" data-type="sensors-combobox" data-default="''" />
+  <meta name="x-icue-property" content="pumpSensorId" data-label="tr('Pump Speed')" data-type="sensors-combobox" data-default="''" />
+  <meta name="x-icue-property" content="fanSensorId" data-label="tr('Fan Speed')" data-type="sensors-combobox" data-default="''" />
+  <meta name="x-icue-property" content="loadSensorId" data-label="tr('CPU Load')" data-type="sensors-combobox" data-default="''" />
+  <meta name="x-icue-property" content="animationFrameRate" data-label="tr('Animation Frame Rate')" data-type="combobox" data-default="'30'" data-values="[{'key':'static','value':tr('Static')},{'key':'15','value':tr('15 FPS')},{'key':'30','value':tr('30 FPS')}]" />
+  <meta name="x-icue-property" content="warmThreshold" data-label="tr('Warm Threshold (°C)')" data-type="textfield" data-default="'36'" />
+  <meta name="x-icue-property" content="hotThreshold" data-label="tr('Hot Threshold (°C)')" data-type="textfield" data-default="'42'" />
+  <meta name="x-icue-property" content="pumpSpeedThreshold" data-label="tr('Pump Speed Threshold (RPM)')" data-type="textfield" data-default="'2700'" />
+  <meta name="x-icue-property" content="cpuTemperatureThreshold" data-label="tr('CPU Temperature Threshold (°C)')" data-type="textfield" data-default="'75'" />
+  <meta name="x-icue-property" content="fanMinSpeed" data-label="tr('Fan Minimum Speed (RPM)')" data-type="textfield" data-default="'400'" />
+  <meta name="x-icue-property" content="fanMaxSpeed" data-label="tr('Fan Maximum Speed (RPM)')" data-type="textfield" data-default="'2000'" />
+  <meta name="x-icue-property" content="loadLowThreshold" data-label="tr('CPU Load Low/Mid Threshold (%)')" data-type="textfield" data-default="'30'" />
+  <meta name="x-icue-property" content="loadHighThreshold" data-label="tr('CPU Load Mid/High Threshold (%)')" data-type="textfield" data-default="'70'" />
+  <meta name="x-icue-property" content="coolColor" data-label="tr('Cool Color')" data-type="color" data-default="'#37d9ff'" />
+  <meta name="x-icue-property" content="warmColor" data-label="tr('Warm Color')" data-type="color" data-default="'#ffad3d'" />
+  <meta name="x-icue-property" content="hotColor" data-label="tr('Hot Color')" data-type="color" data-default="'#ff3d4d'" />
+  <meta name="x-icue-property" content="pumpLowColor" data-label="tr('Pump Low Color')" data-type="color" data-default="'#37d9ff'" />
+  <meta name="x-icue-property" content="pumpHighColor" data-label="tr('Pump High Color')" data-type="color" data-default="'#ff3d4d'" />
+  <meta name="x-icue-property" content="cpuLowColor" data-label="tr('CPU Low Color')" data-type="color" data-default="'#37d9ff'" />
+  <meta name="x-icue-property" content="cpuHighColor" data-label="tr('CPU High Color')" data-type="color" data-default="'#ff3d4d'" />
+  <meta name="x-icue-property" content="fanArcColor" data-label="tr('Fan Arc Color')" data-type="color" data-default="'#39eba9'" />
+  <meta name="x-icue-property" content="loadLowColor" data-label="tr('CPU Load Low Color')" data-type="color" data-default="'#37d9ff'" />
+  <meta name="x-icue-property" content="loadMidColor" data-label="tr('CPU Load Mid Color')" data-type="color" data-default="'#ffad3d'" />
+  <meta name="x-icue-property" content="loadHighColor" data-label="tr('CPU Load High Color')" data-type="color" data-default="'#ff3d4d'" />
+  <meta name="x-icue-property" content="textColor" data-label="tr('Text Color')" data-type="color" data-default="'#e9fbff'" />
+  <meta name="x-icue-property" content="backgroundColor" data-label="tr('Background Color')" data-type="color" data-default="'#020810'" />
+
+  <script type="application/json" id="x-icue-groups">
+  [
+    {
+      "title": "tr('Sensors')",
+      "properties": ["cpuSensorId", "liquidSensorId", "pumpSensorId", "fanSensorId", "loadSensorId"],
+      "info": "tr('Fan and CPU load sensors are optional; their side gauges stay hidden without valid readings.')"
+    },
+    {
+      "title": "tr('Colors')",
+      "properties": ["coolColor", "warmColor", "hotColor", "pumpLowColor", "pumpHighColor", "cpuLowColor", "cpuHighColor", "fanArcColor", "loadLowColor", "loadMidColor", "loadHighColor", "textColor", "backgroundColor"]
+    },
+    {
+      "title": "tr('Thresholds')",
+      "properties": ["warmThreshold", "hotThreshold", "pumpSpeedThreshold", "cpuTemperatureThreshold", "fanMinSpeed", "fanMaxSpeed", "loadLowThreshold", "loadHighThreshold", "animationFrameRate"],
+      "info": "tr('30 FPS is recommended for the 30 Hz Pump LCD; use 15 FPS or Static for lower resource usage.')"
+    }
+  ]
+  </script>
+
+  <script src="common/plugins/IcueWidgetApiWrapper.js"></script>
+  <script src="common/plugins/SimpleSensorApiWrapper.js"></script>
+
+  <style>
+    :root {
+      --u: 1vmin;
+      --cool: #37d9ff;
+      --warm: #ffad3d;
+      --hot: #ff3d4d;
+      --accent: var(--cool);
+      --pump-indicator: #65717a;
+      --cpu-indicator: #65717a;
+      --fan-arc: #39eba9;
+      --text: #e9fbff;
+      --background: #020810;
+      --muted: rgba(207, 240, 248, .62);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #000; }
+    body {
+      color: var(--text);
+      font-family: "Bahnschrift", "Segoe UI", Arial, sans-serif;
+      font-variant-numeric: tabular-nums;
+      text-rendering: geometricPrecision;
+    }
+
+    .screen {
+      position: relative;
+      isolation: isolate;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 46%),
+        radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--background) 87%, #12304a), var(--background) 62%, #000 100%);
+    }
+
+    .core-view { position: absolute; inset: 0; }
+
+    .top-telemetry {
+      position: absolute;
+      top: calc(var(--u) * 7.2);
+      left: 50%;
+      z-index: 4;
+      display: flex;
+      transform: translateX(-50%);
+      align-items: center;
+      gap: calc(var(--u) * 2.2);
+      white-space: nowrap;
+    }
+
+    .telemetry-icon {
+      display: inline-block;
+      width: calc(var(--u) * 7.4);
+      height: calc(var(--u) * 7.4);
+      flex: 0 0 auto;
+      background: currentColor;
+      -webkit-mask-position: center;
+      -webkit-mask-repeat: no-repeat;
+      -webkit-mask-size: contain;
+      mask-position: center;
+      mask-repeat: no-repeat;
+      mask-size: contain;
+    }
+
+    .chip-icon {
+      color: var(--cpu-indicator);
+      -webkit-mask-image: url("resources/chip.svg");
+      mask-image: url("resources/chip.svg");
+      filter: drop-shadow(0 0 calc(var(--u) * 1.25) color-mix(in srgb, var(--cpu-indicator) 52%, transparent));
+    }
+
+    .top-value {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: calc(var(--u) * 7.4);
+      font-weight: 700;
+      letter-spacing: calc(var(--u) * -.3);
+      line-height: 1;
+      text-shadow: 0 0 calc(var(--u) * 1.8) color-mix(in srgb, var(--accent) 45%, transparent);
+    }
+
+    .top-unit { margin-left: calc(var(--u) * .45); font-size: calc(var(--u) * 4.1); letter-spacing: 0; }
+
+    .orb {
+      position: absolute;
+      top: calc(var(--u) * 18);
+      left: 50%;
+      z-index: 2;
+      width: calc(var(--u) * 64);
+      height: calc(var(--u) * 64);
+      overflow: hidden;
+      transform: translateX(-50%);
+      border: calc(var(--u) * .35) solid color-mix(in srgb, var(--accent) 42%, white 8%);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 34% 24%, rgba(255,255,255,.23), transparent 16%),
+        radial-gradient(circle at 50% 65%, color-mix(in srgb, var(--accent) 33%, #00101f), #010a12 72%);
+      box-shadow:
+        inset calc(var(--u) * -4) calc(var(--u) * -6) calc(var(--u) * 12) rgba(0,0,0,.72),
+        inset calc(var(--u) * 3) calc(var(--u) * 3) calc(var(--u) * 9) color-mix(in srgb, var(--accent) 13%, transparent),
+        0 0 calc(var(--u) * 8) color-mix(in srgb, var(--accent) 16%, transparent);
+    }
+
+    .orb::after {
+      content: "";
+      position: absolute;
+      top: 8%;
+      left: 18%;
+      z-index: 3;
+      width: 39%;
+      height: 16%;
+      transform: rotate(-24deg);
+      border-radius: 50%;
+      background: linear-gradient(180deg, rgba(255,255,255,.27), rgba(255,255,255,0));
+      filter: blur(calc(var(--u) * .35));
+      pointer-events: none;
+    }
+
+    #fluidCanvas { width: 100%; height: 100%; opacity: .94; }
+    .orb-content {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .orb-label {
+      position: absolute;
+      top: 30.5%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(234, 250, 255, .7);
+      font-size: calc(var(--u) * 3.8);
+      font-weight: 700;
+      letter-spacing: calc(var(--u) * 1.15);
+      white-space: nowrap;
+    }
+
+    .orb-value {
+      position: absolute;
+      top: 43%;
+      left: 50%;
+      display: flex;
+      transform: translateX(-50%);
+      align-items: flex-start;
+      justify-content: center;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: calc(var(--u) * 16.2);
+      font-weight: 700;
+      letter-spacing: calc(var(--u) * -1.4);
+      line-height: 1;
+      white-space: nowrap;
+      text-shadow: 0 0 calc(var(--u) * 2.4) rgba(216, 248, 255, .28);
+    }
+    .orb-value .temperature-unit { margin: calc(var(--u) * 1.25) 0 0 calc(var(--u) * 1.35); font-size: calc(var(--u) * 5.8); letter-spacing: 0; }
+
+    .delta-readout {
+      position: absolute;
+      top: 72%;
+      left: 50%;
+      display: flex;
+      transform: translateX(-50%);
+      align-items: baseline;
+      gap: calc(var(--u) * .7);
+      color: rgba(234, 250, 255, .72);
+      font-family: Consolas, "Courier New", monospace;
+      font-size: calc(var(--u) * 5.1);
+      font-weight: 700;
+      letter-spacing: calc(var(--u) * .05);
+      text-shadow: 0 0 calc(var(--u) * 1.2) color-mix(in srgb, var(--accent) 32%, transparent);
+    }
+    .delta-symbol { color: color-mix(in srgb, var(--accent) 72%, white); }
+    .delta-unit { font-size: calc(var(--u) * 3.4); }
+
+    .side-meters {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+    }
+    .side-gauge.is-hidden { display: none; }
+    .fan-segment { fill: var(--fan-arc); transition: opacity .2s linear; }
+    .load-bar { transition: opacity .2s linear; }
+
+    .pump {
+      position: absolute;
+      top: calc(var(--u) * 85.5);
+      left: 50%;
+      z-index: 4;
+      display: flex;
+      transform: translateX(-50%);
+      align-items: center;
+      gap: calc(var(--u) * 2.0);
+      white-space: nowrap;
+    }
+    .pump-icon {
+      width: calc(var(--u) * 8.2);
+      height: calc(var(--u) * 8.2);
+      background: var(--pump-indicator);
+      -webkit-mask-image: url("resources/pump.svg");
+      mask-image: url("resources/pump.svg");
+      filter: drop-shadow(0 0 calc(var(--u) * 1.45) color-mix(in srgb, var(--pump-indicator) 58%, transparent));
+    }
+    .pump-value { font-family: Consolas, "Courier New", monospace; font-size: calc(var(--u) * 7.2); font-weight: 700; line-height: 1; }
+    .pump-unit { color: var(--muted); font-size: calc(var(--u) * 3.1); font-weight: 700; }
+
+    .screen.status-offline { --accent: #65717a; --muted: rgba(207, 220, 225, .45); }
+    .screen.status-warm { --accent: var(--warm); }
+    .screen.status-hot { --accent: var(--hot); }
+    .screen.status-cool { --accent: var(--cool); }
+
+  </style>
+</head>
+<body>
+  <main class="screen status-offline" id="screen">
+    <svg class="side-meters" viewBox="0 0 480 480" aria-hidden="true">
+      <g class="side-gauge is-hidden" id="fanGauge"><g id="fanSegments"></g></g>
+      <g class="side-gauge is-hidden" id="loadGauge"><g id="loadBars"></g></g>
+    </svg>
+    <section class="core-view" aria-label="Thermal core">
+      <div class="top-telemetry" aria-label="CPU temperature">
+        <span class="telemetry-icon chip-icon" aria-hidden="true"></span>
+        <span class="top-value"><span id="cpuValue">--.-</span><span class="top-unit" id="cpuUnit"></span></span>
+      </div>
+      <div class="orb">
+        <canvas id="fluidCanvas" width="320" height="320"></canvas>
+        <div class="orb-content">
+          <div class="orb-label">LIQUID</div>
+          <div class="orb-value"><span id="liquidValue">--.-</span><span class="temperature-unit" id="liquidUnit"></span></div>
+          <div class="delta-readout"><span class="delta-symbol">Δ</span><span id="deltaValue">--.-</span><span class="delta-unit" id="deltaUnit"></span></div>
+        </div>
+      </div>
+      <div class="pump">
+        <span class="telemetry-icon pump-icon" aria-hidden="true"></span>
+        <span class="pump-value" id="pumpValue">----</span>
+        <span class="pump-unit" id="pumpUnit"></span>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    var CORE_SENSOR_KEYS = ["cpu", "liquid", "pump"];
+    var SENSOR_KEYS = ["cpu", "liquid", "pump", "fan", "load"];
+    var SIDE_SEGMENT_COUNT = 12;
+    var BOOT_RETRY_MS = 100;
+    var BOOT_RETRY_MAX = 15;
+    var FLUID_DEFAULT_FPS = 30;
+    var FLUID_FRAME_EPSILON_MS = 0.5;
+    var sensorApi = null;
+    var signalsConnected = false;
+    var sensorInitializationComplete = false;
+    var refreshGeneration = 0;
+    var refreshTimer = null;
+    var refreshInFlight = false;
+    var refreshPending = false;
+    var lastSelectionSignature = "";
+    var readings = {
+      cpu: { raw: null, smooth: null, unit: "" },
+      liquid: { raw: null, smooth: null, unit: "" },
+      pump: { raw: null, smooth: null, unit: "" },
+      fan: { raw: null, smooth: null, unit: "" },
+      load: { raw: null, smooth: null, unit: "" }
+    };
+    var readingSensorIds = { cpu: "", liquid: "", pump: "", fan: "", load: "" };
+    var fluidFrameRequest = null;
+    var fluidLastFrame = 0;
+    var fluidTime = 0;
+    var activeFluidColor = "#65717a";
+    var activeThermalState = "offline";
+    var loadHistory = [];
+    var loadHistorySensorId = "";
+    var loadHistoryTimer = null;
+    var bootAttempts = 0;
+    var bootTimer = null;
+    var browserPreviewRendered = false;
+    var reducedMotionQuery = null;
+    var reducedMotionListenerConnected = false;
+
+    icueEvents = { onICUEInitialized: onIcueInitialized, onDataUpdated: onIcueDataUpdated };
+    pluginSensorsdataproviderEvents = { onInitialized: onSensorsInitialized };
+
+    function icueIsReady() {
+      return typeof iCUE_initialized !== "undefined" && !!iCUE_initialized;
+    }
+
+    function sensorsPluginIsReady() {
+      return typeof pluginSensorsdataprovider_initialized !== "undefined"
+        && !!pluginSensorsdataprovider_initialized
+        && !!window.plugins
+        && !!window.plugins.Sensorsdataprovider;
+    }
+
+    function renderBrowserPreview() {
+      if (browserPreviewRendered) return;
+      browserPreviewRendered = true;
+      setReading("cpu", 42.0, "C", true);
+      setReading("liquid", 33.6, "C", true);
+      setReading("pump", 2460, "RPM", true);
+      renderAll();
+    }
+
+    function bootCheck() {
+      if (icueIsReady()) {
+        onIcueInitialized();
+        if (sensorsPluginIsReady()) onSensorsInitialized();
+        if (sensorInitializationComplete) {
+          if (bootTimer !== null) clearTimeout(bootTimer);
+          bootTimer = null;
+          return;
+        }
+      }
+      if (bootAttempts < BOOT_RETRY_MAX) {
+        bootAttempts += 1;
+        bootTimer = setTimeout(bootCheck, BOOT_RETRY_MS);
+        return;
+      }
+      bootTimer = null;
+      if (!icueIsReady()) renderBrowserPreview();
+    }
+
+    function property(name, fallback) {
+      if (Object.prototype.hasOwnProperty.call(window, name)) {
+        var windowValue = window[name];
+        if (windowValue !== undefined && windowValue !== null && windowValue !== "") return windowValue;
+      }
+      try {
+        var lexicalValue = Function("return typeof " + name + " !== 'undefined' ? " + name + " : undefined")();
+        if (lexicalValue !== undefined && lexicalValue !== null && lexicalValue !== "") return lexicalValue;
+      } catch (error) {}
+      return fallback;
+    }
+
+    function configuredSensors() {
+      return {
+        cpu: property("cpuSensorId", ""),
+        liquid: property("liquidSensorId", ""),
+        pump: property("pumpSensorId", ""),
+        fan: property("fanSensorId", ""),
+        load: property("loadSensorId", "")
+      };
+    }
+
+    function activeKeys() {
+      return SENSOR_KEYS.slice();
+    }
+
+    function selectionSignature(ids) {
+      return activeKeys().map(function(key) { return key + ":" + (ids[key] || ""); }).join("|");
+    }
+
+    function applyAppearance() {
+      var root = document.documentElement.style;
+      root.setProperty("--cool", property("coolColor", "#37d9ff"));
+      root.setProperty("--warm", property("warmColor", "#ffad3d"));
+      root.setProperty("--hot", property("hotColor", "#ff3d4d"));
+      root.setProperty("--pump-low", property("pumpLowColor", "#37d9ff"));
+      root.setProperty("--pump-high", property("pumpHighColor", "#ff3d4d"));
+      root.setProperty("--fan-arc", property("fanArcColor", "#39eba9"));
+      root.setProperty("--text", property("textColor", "#e9fbff"));
+      root.setProperty("--background", property("backgroundColor", "#020810"));
+      updateStatus();
+      renderSideGauges();
+    }
+
+    function onIcueInitialized() {
+      applyAppearance();
+      if (typeof pluginSensorsdataprovider_initialized !== "undefined" && pluginSensorsdataprovider_initialized) onSensorsInitialized();
+    }
+
+    function onIcueDataUpdated() {
+      var before = lastSelectionSignature;
+      applyAppearance();
+      syncFluidAnimationMode();
+      if (sensorApi && selectionSignature(configuredSensors()) !== before) scheduleRefresh(0);
+    }
+
+    function onSensorsInitialized() {
+      if (!window.plugins || !window.plugins.Sensorsdataprovider) return;
+      if (!sensorApi) sensorApi = new SimpleSensorApiWrapper(window.plugins.Sensorsdataprovider);
+      connectSignals();
+      if (sensorInitializationComplete) return;
+      sensorInitializationComplete = true;
+      scheduleRefresh(0);
+    }
+
+    function connectSignals() {
+      if (signalsConnected) return;
+      var plugin = window.plugins.Sensorsdataprovider;
+      plugin.sensorValueChanged.connect(onValueChanged);
+      plugin.sensorUnitsChanged.connect(onUnitsChanged);
+      plugin.sensorRemoved.connect(onSensorTopologyChanged);
+      plugin.sensorAdded.connect(onSensorTopologyChanged);
+      signalsConnected = true;
+    }
+
+    function onSensorTopologyChanged(id) {
+      var ids = configuredSensors();
+      var relevant = activeKeys().some(function(key) { return ids[key] && ids[key] === id; });
+      if (relevant) scheduleRefresh(300);
+    }
+
+    function scheduleRefresh(delay) {
+      if (!sensorApi) return;
+      refreshPending = true;
+      if (refreshTimer !== null) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(runScheduledRefresh, delay || 0);
+    }
+
+    async function runScheduledRefresh() {
+      refreshTimer = null;
+      if (refreshInFlight) return;
+      refreshPending = false;
+      refreshInFlight = true;
+      try {
+        await refreshActiveSensors();
+      } finally {
+        refreshInFlight = false;
+        if (refreshPending) scheduleRefresh(100);
+      }
+    }
+
+    async function readSensor(id) {
+      if (!id) return { value: null, unit: "" };
+      try {
+        var result = await Promise.all([sensorApi.getSensorValue(id), sensorApi.getSensorUnits(id)]);
+        if (result[0] === "-1" && result[1] === "-1") return { value: null, unit: "" };
+        return { value: finiteNumber(result[0]), unit: normalizeUnit(result[1]) };
+      } catch (error) {
+        return { value: null, unit: "" };
+      }
+    }
+
+    async function refreshActiveSensors() {
+      if (!sensorApi) return;
+      var generation = ++refreshGeneration;
+      var ids = configuredSensors();
+      var keys = activeKeys();
+      var signature = selectionSignature(ids);
+      lastSelectionSignature = signature;
+      var results = await Promise.all(keys.map(function(key) { return readSensor(ids[key]); }));
+      if (generation !== refreshGeneration || signature !== selectionSignature(configuredSensors())) return;
+      keys.forEach(function(key, index) {
+        readingSensorIds[key] = ids[key] || "";
+        setReading(key, results[index].value, results[index].unit, true);
+      });
+      renderAll();
+      seedLoadHistory();
+    }
+
+    function keyForSensorId(id) {
+      var ids = configuredSensors();
+      var keys = activeKeys();
+      for (var i = 0; i < keys.length; i += 1) if (ids[keys[i]] === id) return keys[i];
+      return "";
+    }
+
+    function onValueChanged(id, value) {
+      var key = keyForSensorId(id);
+      if (!key) return;
+      readingSensorIds[key] = id;
+      setReading(key, finiteNumber(value), readings[key].unit, false);
+      renderAll();
+    }
+
+    function onUnitsChanged(id, unit) {
+      var key = keyForSensorId(id);
+      if (!key) return;
+      readings[key].unit = normalizeUnit(unit);
+      renderAll();
+    }
+
+    function setReading(key, value, unit, resetSmoothing) {
+      var reading = readings[key];
+      reading.raw = value;
+      reading.unit = normalizeUnit(unit);
+      if (value === null) reading.smooth = null;
+      else if (resetSmoothing || reading.smooth === null) reading.smooth = value;
+      else reading.smooth += (value - reading.smooth) * 0.24;
+    }
+
+    function finiteNumber(value) {
+      if (value === null || value === undefined || value === "" || value === "-1") return null;
+      var number = Number(value);
+      return Number.isFinite(number) ? number : null;
+    }
+
+    function normalizeUnit(unit) {
+      if (typeof unit !== "string" || !unit || unit === "-1") return "";
+      var trimmed = unit.trim();
+      if (!trimmed) return "";
+      if (trimmed === "C" || trimmed === "F") return "°" + trimmed;
+      return trimmed;
+    }
+
+    function displayTemperature(value, precision) {
+      return value === null ? (precision ? "--.-" : "--") : value.toFixed(precision ? 1 : 0);
+    }
+
+    function displayWhole(value, placeholder) {
+      return value === null ? placeholder : Math.max(0, Math.round(value)).toString();
+    }
+
+    function isTemperatureUnit(unit) {
+      return unit === "°C" || unit === "°F";
+    }
+
+    function renderAll() {
+      var cpu = readings.cpu.smooth;
+      var liquid = readings.liquid.smooth;
+      var pump = readings.pump.smooth;
+
+      setText("cpuValue", displayTemperature(cpu, true));
+      setText("cpuUnit", cpu === null ? "" : readings.cpu.unit);
+      setText("liquidValue", displayTemperature(liquid, true));
+      setText("liquidUnit", liquid === null ? "" : readings.liquid.unit);
+      setText("pumpValue", displayWhole(pump, "----"));
+      setText("pumpUnit", pump === null ? "" : readings.pump.unit);
+
+      var delta = temperatureDelta(cpu, liquid);
+      setText("deltaValue", displayTemperature(delta, true));
+      setText("deltaUnit", delta === null ? "" : readings.cpu.unit);
+      updateStatus();
+      renderSideGauges();
+    }
+
+    function temperatureDelta(cpu, liquid) {
+      if (cpu === null || liquid === null) return null;
+      if (readings.cpu.unit !== readings.liquid.unit || !isTemperatureUnit(readings.cpu.unit)) return null;
+      return cpu - liquid;
+    }
+
+    function setText(id, text) {
+      document.getElementById(id).textContent = text;
+    }
+
+    function updateStatus() {
+      var screen = document.getElementById("screen");
+      var offline = CORE_SENSOR_KEYS.some(function(key) { return readings[key].smooth === null; });
+      var warmThresholdValue = numericSetting("warmThreshold", 36);
+      var hotThresholdValue = Math.max(warmThresholdValue, numericSetting("hotThreshold", 42));
+      var liquid = readings.liquid.smooth;
+      var state = "cool";
+      if (offline) state = "offline";
+      else if (liquid !== null && liquid >= hotThresholdValue) state = "hot";
+      else if (liquid !== null && liquid >= warmThresholdValue) state = "warm";
+      screen.classList.toggle("status-offline", state === "offline");
+      screen.classList.toggle("status-warm", state === "warm");
+      screen.classList.toggle("status-hot", state === "hot");
+      screen.classList.toggle("status-cool", state === "cool");
+      activeThermalState = state;
+      activeFluidColor = themeColorForState(state);
+      updatePumpIndicator();
+      updateCpuIndicator();
+      renderStaticFluidFrame();
+    }
+
+    function numericSetting(name, fallback) {
+      var value = finiteNumber(property(name, fallback));
+      return value === null ? fallback : value;
+    }
+
+    function themeColorForState(state) {
+      if (state === "hot") return String(property("hotColor", "#ff3d4d"));
+      if (state === "warm") return String(property("warmColor", "#ffad3d"));
+      if (state === "cool") return String(property("coolColor", "#37d9ff"));
+      return "#65717a";
+    }
+
+    function pumpIndicatorColor(pump) {
+      if (pump === null) return "#65717a";
+      var threshold = Math.max(0, numericSetting("pumpSpeedThreshold", 2700));
+      return pump >= threshold
+        ? String(property("pumpHighColor", "#ff3d4d"))
+        : String(property("pumpLowColor", "#37d9ff"));
+    }
+
+    function updatePumpIndicator() {
+      document.documentElement.style.setProperty("--pump-indicator", pumpIndicatorColor(readings.pump.smooth));
+    }
+
+    function cpuIndicatorColor(cpu) {
+      if (cpu === null) return "#65717a";
+      var threshold = numericSetting("cpuTemperatureThreshold", 75);
+      return cpu >= threshold
+        ? String(property("cpuHighColor", "#ff3d4d"))
+        : String(property("cpuLowColor", "#37d9ff"));
+    }
+
+    function updateCpuIndicator() {
+      document.documentElement.style.setProperty("--cpu-indicator", cpuIndicatorColor(readings.cpu.smooth));
+    }
+
+    function initializeSideGauges() {
+      var fanParent = document.getElementById("fanSegments");
+      var loadParent = document.getElementById("loadBars");
+      if (!fanParent || !loadParent || fanParent.children.length || loadParent.children.length) return;
+      for (var index = 0; index < SIDE_SEGMENT_COUNT; index += 1) {
+        var angle = -42 + index * (84 / (SIDE_SEGMENT_COUNT - 1));
+        appendGaugeBar(fanParent, "fanSegment" + index, "fan-segment", 26, 236, 28, 8, angle);
+        appendGaugeBar(loadParent, "loadBar" + index, "load-bar", 426, 236, 14, 8, angle);
+      }
+    }
+
+    function appendGaugeBar(parent, id, className, x, y, width, height, angle) {
+      var bar = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      bar.setAttribute("id", id);
+      bar.setAttribute("class", className);
+      bar.setAttribute("x", x);
+      bar.setAttribute("y", y);
+      bar.setAttribute("width", width);
+      bar.setAttribute("height", height);
+      bar.setAttribute("rx", height / 2);
+      bar.setAttribute("transform", "rotate(" + angle + " 240 240)");
+      parent.appendChild(bar);
+    }
+
+    function fanRange() {
+      var minimum = Math.max(0, numericSetting("fanMinSpeed", 400));
+      var maximum = Math.max(0, numericSetting("fanMaxSpeed", 2000));
+      if (maximum <= minimum) maximum = minimum + 1;
+      return { minimum: minimum, maximum: maximum };
+    }
+
+    function fanProgressSegments(value) {
+      if (value === null) return 0;
+      var range = fanRange();
+      var progress = Math.max(0, Math.min(1, (value - range.minimum) / (range.maximum - range.minimum)));
+      return Math.round(progress * SIDE_SEGMENT_COUNT);
+    }
+
+    function renderFanGauge() {
+      var gauge = document.getElementById("fanGauge");
+      if (!gauge) return;
+      var fanSensorId = configuredSensors().fan || "";
+      var visible = !!fanSensorId && readingSensorIds.fan === fanSensorId && readings.fan.smooth !== null;
+      gauge.classList.toggle("is-hidden", !visible);
+      var illuminated = visible ? fanProgressSegments(readings.fan.smooth) : 0;
+      for (var index = 0; index < SIDE_SEGMENT_COUNT; index += 1) {
+        var segment = document.getElementById("fanSegment" + index);
+        if (segment) segment.style.opacity = index < illuminated ? ".96" : ".14";
+      }
+    }
+
+    function loadCategory(value) {
+      if (value === null) return null;
+      var thresholds = loadThresholds();
+      if (value < thresholds.low) return "low";
+      if (value < thresholds.high) return "mid";
+      return "high";
+    }
+
+    function loadThresholds() {
+      var low = Math.max(0, Math.min(100, numericSetting("loadLowThreshold", 30)));
+      var high = Math.max(low, Math.min(100, numericSetting("loadHighThreshold", 70)));
+      return { low: low, high: high };
+    }
+
+    function syncLoadHistorySelection() {
+      var sensorId = configuredSensors().load || "";
+      if (sensorId === loadHistorySensorId) return;
+      loadHistorySensorId = sensorId;
+      loadHistory = [];
+    }
+
+    function sampleLoadHistory() {
+      syncLoadHistorySelection();
+      var load = readings.load.raw;
+      if (!loadHistorySensorId || readingSensorIds.load !== loadHistorySensorId || load === null) {
+        loadHistory = [];
+        renderLoadGauge();
+        return;
+      }
+      loadHistory.unshift(loadCategory(Math.max(0, Math.min(100, load))));
+      if (loadHistory.length > SIDE_SEGMENT_COUNT) loadHistory.length = SIDE_SEGMENT_COUNT;
+      renderLoadGauge();
+    }
+
+    function seedLoadHistory() {
+      syncLoadHistorySelection();
+      if (loadHistorySensorId && readings.load.raw !== null && !loadHistory.length) sampleLoadHistory();
+    }
+
+    function renderLoadGauge() {
+      syncLoadHistorySelection();
+      var gauge = document.getElementById("loadGauge");
+      if (!gauge) return;
+      var visible = !!loadHistorySensorId && readingSensorIds.load === loadHistorySensorId && readings.load.raw !== null;
+      gauge.classList.toggle("is-hidden", !visible);
+      var widths = { low: 14, mid: 23, high: 32 };
+      var colors = {
+        low: String(property("loadLowColor", "#37d9ff")),
+        mid: String(property("loadMidColor", "#ffad3d")),
+        high: String(property("loadHighColor", "#ff3d4d"))
+      };
+      for (var index = 0; index < SIDE_SEGMENT_COUNT; index += 1) {
+        var bar = document.getElementById("loadBar" + index);
+        var category = loadHistory[index];
+        if (!bar) continue;
+        bar.style.opacity = visible && category ? ".94" : "0";
+        if (category) {
+          bar.setAttribute("width", widths[category]);
+          bar.setAttribute("fill", colors[category]);
+        }
+      }
+    }
+
+    function renderSideGauges() {
+      initializeSideGauges();
+      renderFanGauge();
+      renderLoadGauge();
+    }
+
+    function startLoadHistorySampler() {
+      if (loadHistoryTimer !== null) return;
+      loadHistoryTimer = setInterval(sampleLoadHistory, 5000);
+    }
+
+    function startFluidAnimation() {
+      configureMotionPreference();
+      if (fluidAnimationIsStatic()) {
+        renderStaticFluidFrame();
+        return;
+      }
+      if (fluidFrameRequest !== null) return;
+      fluidFrameRequest = requestAnimationFrame(drawFluidFrame);
+    }
+
+    function drawFluidFrame(timestamp) {
+      fluidFrameRequest = null;
+      if (fluidAnimationIsStatic()) {
+        renderStaticFluidFrame();
+        return;
+      }
+      fluidFrameRequest = requestAnimationFrame(drawFluidFrame);
+      var frameInterval = fluidFrameInterval();
+      if (fluidLastFrame && timestamp - fluidLastFrame + FLUID_FRAME_EPSILON_MS < frameInterval) return;
+      var elapsedCap = Math.max(80, frameInterval);
+      var elapsed = fluidLastFrame ? Math.min(elapsedCap, timestamp - fluidLastFrame) : frameInterval;
+      fluidLastFrame = timestamp;
+      var speed = fluidSpeed(readings.pump.smooth);
+      fluidTime += elapsed * .001 * speed;
+      paintFluid(document.getElementById("fluidCanvas"), fluidTime);
+    }
+
+    function configuredFluidFps() {
+      var configured = String(property("animationFrameRate", "30"));
+      if (configured === "static") return 0;
+      var fps = Number(configured);
+      return fps === 15 || fps === 30 ? fps : FLUID_DEFAULT_FPS;
+    }
+
+    function fluidFpsLimit() {
+      var configured = configuredFluidFps();
+      if (configured === 0) return 0;
+      var fpsLimit = null;
+      try {
+        if (typeof iCUE !== "undefined" && iCUE && typeof iCUE.fpsLimit === "number") fpsLimit = iCUE.fpsLimit;
+      } catch (error) {}
+      if (!Number.isFinite(fpsLimit) || fpsLimit <= 0) return configured;
+      return Math.min(configured, fpsLimit);
+    }
+
+    function fluidFrameInterval() {
+      var fps = fluidFpsLimit();
+      return fps > 0 ? 1000 / fps : Infinity;
+    }
+
+    function configureMotionPreference() {
+      if (reducedMotionQuery || typeof window.matchMedia !== "function") return;
+      reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+      if (!reducedMotionQuery || reducedMotionListenerConnected) return;
+      if (typeof reducedMotionQuery.addEventListener === "function") {
+        reducedMotionQuery.addEventListener("change", onMotionPreferenceChanged);
+        reducedMotionListenerConnected = true;
+      } else if (typeof reducedMotionQuery.addListener === "function") {
+        reducedMotionQuery.addListener(onMotionPreferenceChanged);
+        reducedMotionListenerConnected = true;
+      }
+    }
+
+    function prefersReducedMotion() {
+      configureMotionPreference();
+      return !!(reducedMotionQuery && reducedMotionQuery.matches);
+    }
+
+    function fluidAnimationIsStatic() {
+      return prefersReducedMotion() || configuredFluidFps() === 0;
+    }
+
+    function renderStaticFluidFrame() {
+      if (!fluidAnimationIsStatic()) return;
+      paintFluid(document.getElementById("fluidCanvas"), fluidTime);
+    }
+
+    function syncFluidAnimationMode() {
+      fluidLastFrame = 0;
+      if (fluidAnimationIsStatic()) {
+        if (fluidFrameRequest !== null && typeof cancelAnimationFrame === "function") cancelAnimationFrame(fluidFrameRequest);
+        fluidFrameRequest = null;
+        renderStaticFluidFrame();
+        return;
+      }
+      startFluidAnimation();
+    }
+
+    function onMotionPreferenceChanged() {
+      syncFluidAnimationMode();
+    }
+
+    function fluidSpeed(pump) {
+      var threshold = Math.max(0, numericSetting("pumpSpeedThreshold", 2700));
+      return pump !== null && pump >= threshold ? 2.1 : 0.85;
+    }
+
+    function paintFluid(canvas, time) {
+      if (!canvas || !canvas.getContext) return;
+      var context = canvas.getContext("2d");
+      if (!context) return;
+      var width = canvas.width;
+      var height = canvas.height;
+      context.clearRect(0, 0, width, height);
+      var layers = [
+        { base: 192, amplitude: 8, frequency: 2, phase: .0, alpha: .30 },
+        { base: 205, amplitude: 10, frequency: 3, phase: 1.8, alpha: .48 },
+        { base: 220, amplitude: 7, frequency: 4, phase: 3.1, alpha: .72 }
+      ];
+      layers.forEach(function(layer, index) {
+        context.beginPath();
+        context.moveTo(0, height);
+        context.lineTo(0, waveY(0, layer, time, index));
+        for (var x = 0; x <= width; x += 5) context.lineTo(x, waveY(x, layer, time, index));
+        context.lineTo(width, height);
+        context.closePath();
+        var gradient = context.createLinearGradient(0, layer.base - 30, width, height);
+        var accent = activeFluidColor;
+        gradient.addColorStop(0, colorWithAlpha(accent, layer.alpha));
+        gradient.addColorStop(1, colorWithAlpha(shadeHex(accent, .48 + index * .08), Math.min(.9, layer.alpha + .1)));
+        context.fillStyle = gradient;
+        context.fill();
+      });
+      var glow = context.createRadialGradient(105, 92, 8, 105, 92, 90);
+      glow.addColorStop(0, "rgba(255,255,255,.18)");
+      glow.addColorStop(1, "rgba(255,255,255,0)");
+      context.fillStyle = glow;
+      context.fillRect(0, 0, width, height);
+    }
+
+    function waveY(x, layer, time, index) {
+      var normalized = x / 320;
+      return layer.base
+        + Math.sin(normalized * Math.PI * layer.frequency + time * (1.4 + index * .18) + layer.phase) * layer.amplitude
+        + Math.sin(normalized * Math.PI * (layer.frequency + 2.3) - time * .72 + layer.phase) * layer.amplitude * .38;
+    }
+
+    function colorWithAlpha(color, alpha) {
+      if (/^#[0-9a-f]{6}$/i.test(color)) {
+        var red = parseInt(color.slice(1, 3), 16);
+        var green = parseInt(color.slice(3, 5), 16);
+        var blue = parseInt(color.slice(5, 7), 16);
+        return "rgba(" + red + "," + green + "," + blue + "," + alpha + ")";
+      }
+      return color;
+    }
+
+    function shadeHex(color, factor) {
+      if (!/^#[0-9a-f]{6}$/i.test(color)) return color;
+      var red = Math.round(parseInt(color.slice(1, 3), 16) * factor);
+      var green = Math.round(parseInt(color.slice(3, 5), 16) * factor);
+      var blue = Math.round(parseInt(color.slice(5, 7), 16) * factor);
+      return "#" + [red, green, blue].map(function(channel) {
+        return channel.toString(16).padStart(2, "0");
+      }).join("");
+    }
+
+    initializeSideGauges();
+    applyAppearance();
+    renderAll();
+    startFluidAnimation();
+    startLoadHistorySampler();
+    bootCheck();
+
+    if (window.__FLUID_BALL_TEST__) {
+      window.__fluidBallTest = {
+        activeFluidColor: function() { return activeFluidColor; },
+        activeThermalState: function() { return activeThermalState; },
+        activeKeys: activeKeys,
+        configuredSensors: configuredSensors,
+        cpuIndicatorColor: cpuIndicatorColor,
+        fanProgressSegments: fanProgressSegments,
+        fanRange: fanRange,
+        bootAttempts: function() { return bootAttempts; },
+        bootCheck: bootCheck,
+        configuredFluidFps: configuredFluidFps,
+        fluidAnimationIsStatic: fluidAnimationIsStatic,
+        fluidFpsLimit: fluidFpsLimit,
+        fluidFrameInterval: fluidFrameInterval,
+        fluidFrameRequest: function() { return fluidFrameRequest; },
+        fluidTime: function() { return fluidTime; },
+        fluidSpeed: fluidSpeed,
+        loadCategory: loadCategory,
+        loadHistory: function() { return loadHistory.slice(); },
+        loadThresholds: loadThresholds,
+        normalizeUnit: normalizeUnit,
+        numericSetting: numericSetting,
+        pumpIndicatorColor: pumpIndicatorColor,
+        themeColorForState: themeColorForState,
+        onIcueDataUpdated: onIcueDataUpdated,
+        onIcueInitialized: onIcueInitialized,
+        onMotionPreferenceChanged: onMotionPreferenceChanged,
+        onSensorTopologyChanged: onSensorTopologyChanged,
+        onSensorsInitialized: onSensorsInitialized,
+        onUnitsChanged: onUnitsChanged,
+        onValueChanged: onValueChanged,
+        readings: readings,
+        refreshActiveSensors: refreshActiveSensors,
+        renderAll: renderAll,
+        sampleLoadHistory: sampleLoadHistory,
+        selectionSignature: selectionSignature,
+        setReading: setReading,
+        startFluidAnimation: startFluidAnimation,
+        syncFluidAnimationMode: syncFluidAnimationMode,
+        temperatureDelta: temperatureDelta
+      };
+    }
+  </script>
+</body>
+</html>

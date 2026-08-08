@@ -1,0 +1,14 @@
+{
+  "author": "sdzzps",
+  "id": "com.zps.fluid-ball",
+  "name": "Fluid Ball",
+  "description": "Animated thermal core for Corsair iCUE pump LCD screens.",
+  "version": "1.5.0",
+  "preview_icon": "resources/icon.svg",
+  "min_app_version": "5.47",
+  "min_framework_version": "1.4.0",
+  "os": [{ "platform": "windows" }],
+  "supported_devices": [{ "type": "pump_lcd" }],
+  "interactive": false,
+  "required_plugins": ["widgetbuilder.sensorsdataprovider:Sensors:1.0"]
+}
