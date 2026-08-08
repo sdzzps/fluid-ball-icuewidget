@@ -15,6 +15,10 @@ Fluid Ball is a monitoring widget with liquid animation for the 480 × 480 circu
 - Liquid animation corresponding to pump speed, implemented with Canvas 2D
 - Lower frame rate and static mode for compatibility
 
+<h1 align="center">
+    <img src="assets/demo2.png">
+</h1>
+
 ## Requirements
 
 - Corsair iCUE 5.47 or later on Windows
